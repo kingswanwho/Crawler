@@ -1,0 +1,11 @@
+[package]
+name = "example_from_doc"
+version = "0.1.0"
+authors = ["Chester <chesterjchu@gmail.com>"]
+
+[dependencies]
+hyper = "0.10.10"
+hyper-native-tls = "0.2.2"
+html5ever = "*"
+tendril = "0.2.4"
+string_cache = "0.5.0"
