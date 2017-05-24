@@ -3,8 +3,16 @@ extern crate hyper;
 use std::env;
 use self::hyper::Url;
 
-pub fn readurl () -> Url {
-    let url_str = env::args().nth(1).unwrap();
-    let url = Url::parse(&url_str).unwrap();
-    return url;
+pub fn readurl() -> Url {       //read the input argument as an absolute url
+	match env::args().nth(1) {
+    	Some(url_str) => {
+    		match Url::parse(&url_str) {
+    			Ok(url) => {   				
+    				url
+    			}
+    			Err(_) => panic!("Panic!: The argument is not an url!"),
+    		}
+    	}
+    	None => panic!("Panic!: It lacks an input argument!"),
+    }
 }
