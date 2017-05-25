@@ -27,6 +27,8 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::marker::Send;
 
+// to avoid violation of Rust's orphan rules for trait implementations.  
+// I create a struct for RcDom to implement Send for it  
 struct myrcdom{
     dom: RcDom,
 }
@@ -42,17 +44,21 @@ fn main() {
     
     let url = readurl::readurl();
 
-    let mut res = client.get(url).send().unwrap();
+    let mut res = client.get(url).send().unwrap();// Get url
     
 
     let dom = parse_document(RcDom::default(), Default::default())
-                .from_utf8().read_from(&mut res).unwrap();
+                .from_utf8().read_from(&mut res).unwrap(); // build a DOM tree for HTTP
     
     let mut link: Vec<String> = Vec::new();
     let mut links: Vec<String> = Vec::new();
     
-    let st_dom = myrcdom {dom: dom};
+// to avoid violation of Rust's orphan rules for trait implementations.  
+// I create a struct for RcDom to implement Send for it  
+    let st_dom = myrcdom {dom: dom}; 
 
+
+//use multi-thread to process DOM tree, but seems not work
     let multi_dom = Arc::new(Mutex::new(st_dom.dom));
 
     for _ in 0..3 {
@@ -66,10 +72,6 @@ fn main() {
     }
 
 
-
-
-    
-
     println!("{}", links.len());
 
     for l in links {
@@ -79,16 +81,10 @@ fn main() {
     
 }
 
-
+//using recursion to trasvers the DOM tree, find href and save them to a vector.
 
 pub fn walk(mut link: &mut Vec<String>, handle: Handle)-> Vec<String> {
-        let node = handle;
-        //let node = Arc::new(Mutex::new(handle));
-
-        //let mut link: Vec<String> =Vec::new();
-        //print!("{}", repeat("").take(indent).collect::<String>());
-        //let mut link_buf: Vec<String> = Vec::new();
-
+        let node = handle;     
         match node.data {     
             NodeData::Element { ref name, ref attrs, .. } => {
                 assert!(name.ns == ns!(html));
@@ -96,8 +92,6 @@ pub fn walk(mut link: &mut Vec<String>, handle: Handle)-> Vec<String> {
                     for attr in attrs.borrow().iter() {
                         assert!(attr.name.ns == ns!());
                         if attr.name.local == string_cache::Atom::from("href") {
-                            //let link_str = String::from(attr.value.clone());
-                            //println!("{}", attr.value);
                             link.push(String::from(attr.value.clone()));
                         }
                         
