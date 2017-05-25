@@ -1,0 +1,10 @@
+[package]
+name = "ttt"
+version = "0.1.0"
+authors = ["Mingyang Li <liamlmy@163.com>"]
+
+[dependencies]
+hyper = "0.10.10"
+hyper-native-tls = "0.2.2"
+error-chain = "0.8"
+select = "0.3"
