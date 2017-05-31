@@ -11,7 +11,7 @@ use select::predicate::Attr;
 use std::env;
 use std::io::Read;
 use hyper::client::IntoUrl;
-use std::collections::VecDeque;
+use std::collections::{HashSet, VecDeque};
 use std::sync::{Arc, Mutex, MutexGuard};
 use error::*;
 
@@ -27,12 +27,12 @@ pub fn sync_pop_url(queue: &Arc<Mutex<VecDeque<Url>>>) -> Option<Url> {
 	queue.pop_front()
 }
 
-pub fn sync_add_url(queue: &Arc<Mutex<VecDeque<Url>>>, bank: &Arc<Mutex<Vec<Url>>>, url: Url) -> Result<()> {
+pub fn sync_add_url(queue: &Arc<Mutex<VecDeque<Url>>>, bank: &Arc<Mutex<HashSet<Url>>>, url: Url) -> Result<()> {
 	let mut queue = lock(queue)?;
 	let mut bank = lock(bank)?;
 
 	if !bank.contains(&url) {
-		bank.push(url.clone());
+		bank.insert(url.clone());
 		queue.push_back(url.clone());
 	}
 
@@ -75,9 +75,9 @@ pub fn convert_url(url: &Url, href: &str) -> Option<Url> {
             Ok(u) => u,
             _ => return None,
         }
-    } else if href.starts_with("http") {
+    } else if href.starts_with("https") {
         match href.into_url() {
-            Ok(u) => u,
+            Ok(u) => return Some(u),
             _ => return None,
         }
     } else if href.starts_with('/') {
@@ -114,15 +114,57 @@ pub fn format_url<S: AsRef<str>>(url: S) -> String {
 }
 
 pub fn crawler(url: Url) -> Result<(Url, Vec<u8>)> {
-	let ssl = NativeTlsClient::new().unwrap();
+	let ssl = match NativeTlsClient::new() {
+		Ok(t) => t,
+		Err(_) => panic!("Panic!: NativeTlsClient get some problems!"),
+	};
 	let connector = HttpsConnector::new(ssl);
 	let client = Client::with_connector(connector);
-
-	let mut response = client.get(url.clone()).send().unwrap();
+	let mut response = client.get(url.clone()).send()?;
 	let mut buf = Vec::new();
 	let body = match response.read_to_end(&mut buf) {
 		Ok(_) => buf,
 		Err(e) => bail!(e),
 	};
 	Ok((url, body))
+}
+
+#[cfg(test)]
+mod test {
+	use super::*;
+
+	#[test]
+	fn test_format_url() {
+		let url = "https://www.google.com";
+		let result = format_url(url);
+		assert_eq!("https:/www.google.com", result);
+
+		let url = "www.google.com/xxx/6666";
+		let result = format_url(url);
+		assert_eq!("www.google.com/xxx/6666", result);
+
+		let url = "/www.google.com////6666/xyz/";
+		let result = format_url(url);
+		assert_eq!("/www.google.com/6666/xyz/", result);
+	}
+
+	#[test]
+	fn test_convert_url() {
+		let url = Url::parse("https://www.google.com").unwrap();
+		let href = "https://www.youtube.com";
+		let result = convert_url(&url, href).unwrap();
+		let test = Url::parse("https://www.youtube.com").unwrap();
+		assert_eq!(test, result);
+
+		let url = Url::parse("https://www.google.com").unwrap();
+		let href = "/map/Evanston";
+		let result = convert_url(&url, href).unwrap();
+		let test = Url::parse("https://www.google.com/map/Evanston").unwrap();
+		assert_eq!(test, result);
+
+		let url = Url::parse("https://www.google.com").unwrap();
+		let href = "javascript/map/Evanston";
+		let result = convert_url(&url, href);
+		assert_eq!(result, None);
+	}
 }
