@@ -53,7 +53,7 @@ pub fn scrap_href(doc: &Document, attr: &str) -> Vec<String> {
 	attrs
 }
 
-pub fn readurl() -> Url {       		//read the input argument as an absolute url
+pub fn readurl() -> Url {       	//read the input argument as an absolute url
 	match env::args().nth(1) {
     	Some(url_str) => {
     		match Url::parse(&url_str) {
