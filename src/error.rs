@@ -14,9 +14,9 @@ error_chain!{
             description(e)
             display("{}", e)
         }
-        // QueueEmpty {
-        //     description("Queue has no item in it")
-        //     display("Queue has no item in it")
-        // }
+        CannotParse {
+            description("The url in this thread cannot be parse anymore")
+            display("The url in this thread cannot be parse anymore")
+        }
     }
 }
