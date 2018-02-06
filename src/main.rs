@@ -1,6 +1,6 @@
 /*
  * Final Project: Concurrent Web Crawler in Rust
- * Author: Mingyang Li, Jingchuan Hu
+ * Author: Jingchuan Hu
  *
  * Code Explanation:
  * In this code, we input an argument of the begining url of the target website
